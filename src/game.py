@@ -1,6 +1,6 @@
 import pygame
 from player import Player
-from ghost import Ghost
+from ghost import Ghost, GHOST_TYPES
 from map import GameMap
 from ui import GameUI
 from sound import SoundManager
@@ -81,7 +81,13 @@ class Game:
     def reset(self):
         self.map = GameMap()
         self.player = Player(self.map, skin=self.skin)
-        self.ghosts = [Ghost(self.map, color, speed=self.ghost_speed) for color in [(255,0,0),(0,255,0),(0,0,255),(255,128,0)]]
+        # Spawn ghosts: Blinky, Pinky, Inky, Clyde
+        self.ghosts = []
+        blinky = Ghost(self.map, GHOST_TYPES[0][1], speed=self.ghost_speed, ghost_type='blinky')
+        self.ghosts.append(blinky)
+        self.ghosts.append(Ghost(self.map, GHOST_TYPES[1][1], speed=self.ghost_speed, ghost_type='pinky'))
+        self.ghosts.append(Ghost(self.map, GHOST_TYPES[2][1], speed=self.ghost_speed, ghost_type='inky', blinky_ref=blinky))
+        self.ghosts.append(Ghost(self.map, GHOST_TYPES[3][1], speed=self.ghost_speed, ghost_type='clyde'))
         self.score = 0
         self.lives = 3
         self.game_over = False
