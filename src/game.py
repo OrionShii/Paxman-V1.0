@@ -151,7 +151,13 @@ class Game:
                 self.saved_score = True
         for ghost in self.ghosts:
             if ghost.x == self.player.x and ghost.y == self.player.y:
-                if not self.player.is_invincible():
+                if ghost.eaten:
+                    continue
+                if self.player.is_invincible() and ghost.mode == 'frightened':
+                    ghost.eaten = True
+                    ghost.mode = 'eyes'
+                    continue
+                if not self.player.is_invincible() and not ghost.eaten and ghost.mode != 'frightened':
                     self.lives -= 1
                     self.sounds.play_sfx('death.wav')
                     self.player.respawn()

@@ -43,6 +43,8 @@ class Ghost:
         self.mode_timer = 420  # 7s at 60fps
         self.frightened_timer = 0
         self.scatter_target = SCATTER_TARGETS[self.ghost_type](self.map.grid)
+        self.eaten = False
+        self.home = self.map.ghost_start()
 
     def _type_from_color(self, color):
         if color == (255,0,0): return 'blinky'
@@ -54,6 +56,24 @@ class Ghost:
     def update(self, player):
         self.frame = (self.frame + 1) % self.speed
         if self.frame != 0:
+            return
+        # Eyes mode: go home
+        if self.eaten:
+            self.move_towards(self.home)
+            if (self.x, self.y) == self.home:
+                self.eaten = False
+                self.mode = 'scatter'
+                self.mode_timer = 420
+            # No other logic while eyes
+            dx = self.x - self.fx
+            dy = self.y - self.fy
+            dist = math.hypot(dx, dy)
+            if dist > 0.01:
+                self.fx += dx/dist * min(self.move_speed, dist)
+                self.fy += dy/dist * min(self.move_speed, dist)
+            else:
+                self.fx, self.fy = float(self.x), float(self.y)
+            self.anim_frame += 1
             return
         # Mode switching
         if self.mode == 'frightened':
@@ -149,7 +169,12 @@ class Ghost:
         px = ox + int(self.fx*cell)
         py = oy + int(self.fy*cell)
         wobble = int(4*math.sin(self.anim_frame/6))
-        if self.mode == 'frightened':
+        if self.eaten:
+            # Draw eyes: white with blue pupils
+            pygame.draw.circle(screen, (255,255,255), (px+cell//2, py+cell//2 + wobble), cell//2-2)
+            pygame.draw.circle(screen, (0,128,255), (px+cell//2-6, py+cell//2 + wobble), 4)
+            pygame.draw.circle(screen, (0,128,255), (px+cell//2+6, py+cell//2 + wobble), 4)
+        elif self.mode == 'frightened':
             color = (0,128,255) if (self.anim_frame//6)%2==0 else (255,255,255)
             pygame.draw.circle(screen, color, (px+cell//2, py+cell//2 + wobble), cell//2-2)
         elif self.sprite:
