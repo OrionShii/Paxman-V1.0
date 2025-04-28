@@ -82,6 +82,29 @@ def draw_game_over(screen, frame):
     small = get_font(28).render('Press ENTER for Menu', True, (255,255,255))
     screen.blit(small, (w//2 - small.get_width()//2, h//2 + 20))
 
+def player_start(self):
+    for y, row in enumerate(self.grid):
+        for x, cell in enumerate(row):
+            if cell == 'P':
+                return x, y
+    # Fallback: find any walkable cell
+    for y, row in enumerate(self.grid):
+        for x, cell in enumerate(row):
+            if self.is_walkable(x, y):
+                return x, y
+    return 1, 1
+
+def ghost_start(self):
+    for y, row in enumerate(self.grid):
+        for x, cell in enumerate(row):
+            if cell == 'G':
+                return x, y
+    for y, row in enumerate(self.grid):
+        for x, cell in enumerate(row):
+            if self.is_walkable(x, y):
+                return x, y
+    return 5, 5
+
 while True:
     frame += 1
     for event in pygame.event.get():

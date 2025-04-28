@@ -163,7 +163,8 @@ class Game:
         # Collision check after all movement
         if not hasattr(self, 'respawn_invuln') or self.respawn_invuln == 0:
             for ghost in self.ghosts:
-                if ghost.x == self.player.x and ghost.y == self.player.y:
+                dist = math.hypot(ghost.fx - self.player.fx, ghost.fy - self.player.fy)
+                if dist < 0.7:
                     if ghost.eaten:
                         continue
                     if self.player.is_invincible() and ghost.mode == 'frightened':
@@ -180,6 +181,7 @@ class Game:
                         self.spawn_particles(self.player.fx, self.player.fy, (255,0,0))
                         self.shake = 16
                         self.respawn_invuln = 120
+                        break
         # Update particles
         self.particles = [p for p in self.particles if p.life > 0]
         for p in self.particles:
