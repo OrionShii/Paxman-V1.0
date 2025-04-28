@@ -104,6 +104,7 @@ class Game:
         self.fruit = None
         self.fruit_timer = 0
         self.dots_eaten = 0
+        self.respawn_invuln = 0
 
     def handle_event(self, event):
         self.player.handle_event(event)
@@ -112,6 +113,8 @@ class Game:
         if hasattr(self, 'start_timer') and self.start_timer > 0:
             self.start_timer -= 1
             return
+        if hasattr(self, 'respawn_invuln') and self.respawn_invuln > 0:
+            self.respawn_invuln -= 1
         self.player.update()
         for ghost in self.ghosts:
             ghost.update(self.player)
@@ -158,20 +161,25 @@ class Game:
             self.reset(keep_score=True)
             return
         # Collision check after all movement
-        for ghost in self.ghosts:
-            if ghost.x == self.player.x and ghost.y == self.player.y:
-                if ghost.eaten:
-                    continue
-                if self.player.is_invincible() and ghost.mode == 'frightened':
-                    ghost.eaten = True
-                    ghost.mode = 'eyes'
-                    continue
-                if not self.player.is_invincible() and not ghost.eaten and ghost.mode != 'frightened':
-                    self.lives -= 1
-                    self.sounds.play_sfx('death.wav')
-                    self.player.respawn()
-                    self.spawn_particles(self.player.fx, self.player.fy, (255,0,0))
-                    self.shake = 16
+        if not hasattr(self, 'respawn_invuln') or self.respawn_invuln == 0:
+            for ghost in self.ghosts:
+                if ghost.x == self.player.x and ghost.y == self.player.y:
+                    if ghost.eaten:
+                        continue
+                    if self.player.is_invincible() and ghost.mode == 'frightened':
+                        ghost.eaten = True
+                        ghost.mode = 'eyes'
+                        continue
+                    if not self.player.is_invincible() and not ghost.eaten and ghost.mode != 'frightened':
+                        self.lives -= 1
+                        if self.lives <= 0:
+                            self.lives = 0
+                            self.game_over = True
+                        self.sounds.play_sfx('death.wav')
+                        self.player.respawn()
+                        self.spawn_particles(self.player.fx, self.player.fy, (255,0,0))
+                        self.shake = 16
+                        self.respawn_invuln = 120
         # Update particles
         self.particles = [p for p in self.particles if p.life > 0]
         for p in self.particles:
@@ -198,7 +206,10 @@ class Game:
             sx = random.randint(-6,6)
             sy = random.randint(-6,6)
         self.map.draw(self.screen, (offset_x+sx, offset_y+sy))
-        self.player.draw(self.screen, (offset_x+sx, offset_y+sy))
+        # Flicker player if invulnerable
+        flicker = (not hasattr(self, 'respawn_invuln') or self.respawn_invuln == 0) or (self.respawn_invuln//8)%2 == 0
+        if flicker:
+            self.player.draw(self.screen, (offset_x+sx, offset_y+sy))
         for ghost in self.ghosts:
             ghost.draw(self.screen, (offset_x+sx, offset_y+sy), self.player)
         for p in self.particles:
