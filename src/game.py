@@ -112,13 +112,6 @@ class Game:
         if hasattr(self, 'start_timer') and self.start_timer > 0:
             self.start_timer -= 1
             return
-        if self.lives <= 0:
-            self.game_over = True
-            self.sounds.stop_music()
-            if not self.saved_score:
-                self.add_score(self.score)
-                self.saved_score = True
-            return
         self.player.update()
         for ghost in self.ghosts:
             ghost.update(self.player)
@@ -138,6 +131,7 @@ class Game:
             self.score += 300
             self.spawn_particles(self.player.fx, self.player.fy, (255,0,0))
             self.fruit = None
+        # Eat dot
         if self.map.eat_dot(self.player.x, self.player.y):
             self.score += 10
             self.sounds.play_sfx('dot.wav')
@@ -163,6 +157,7 @@ class Game:
             self.ghost_speed = max(4, int(self.ghost_speed * 0.85))
             self.reset(keep_score=True)
             return
+        # Collision check after all movement
         for ghost in self.ghosts:
             if ghost.x == self.player.x and ghost.y == self.player.y:
                 if ghost.eaten:
