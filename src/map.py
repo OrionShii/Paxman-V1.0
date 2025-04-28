@@ -18,9 +18,9 @@ class GameMap:
         self.wall_sprite = self.sprites.load('wall.png', (self.cell_size, self.cell_size))
         self.dot_sprite = self.sprites.load('dot.png', (self.cell_size//2, self.cell_size//2))
         self.powerup_sprites = {
-            'T': self.sprites.load('powerup_teleport.png', (self.cell_size, self.cell_size)),
-            'S': self.sprites.load('powerup_speed.png', (self.cell_size, self.cell_size)),
-            'I': self.sprites.load('powerup_invincible.png', (self.cell_size, self.cell_size)),
+            'T': self.sprites.load('teleport.png', (self.cell_size, self.cell_size)),
+            'S': self.sprites.load('speed.png', (self.cell_size, self.cell_size)),
+            'I': self.sprites.load('invincible.png', (self.cell_size, self.cell_size)),
         }
 
     def set_cell_size(self, w, h):

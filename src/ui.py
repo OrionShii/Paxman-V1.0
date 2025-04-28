@@ -19,7 +19,7 @@ class GameUI:
             return pygame.transform.smoothscale(pygame.image.load(path).convert_alpha(), (32, 32))
         return None
 
-    def draw(self, score, high_score, lives, map_rect):
+    def draw(self, score, high_score, lives, map_rect, level=1):
         w = self.screen.get_width()
         # Top UI bar
         label_score = self.font.render('SCORE', True, (255,255,255))
@@ -43,6 +43,9 @@ class GameUI:
         else:
             lives_surf = self.font.render(f'Lives: {lives}', True, (255,255,0))
             self.screen.blit(lives_surf, (map_rect.left, map_rect.bottom + 12))
+        # Draw level number at bottom right
+        level_surf = self.font.render(f'LEVEL {level}', True, (0,255,255))
+        self.screen.blit(level_surf, (map_rect.right - level_surf.get_width(), map_rect.bottom + 12))
 
     def draw_ready(self, map_rect):
         surf = self.big_font.render('READY!', True, (255,255,0))

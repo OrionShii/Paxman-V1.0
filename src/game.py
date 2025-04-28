@@ -57,6 +57,7 @@ class Game:
         self.leaderboard = self.load_leaderboard()
         self.saved_score = False
         self.reset()
+        self.level = 1
 
     def load_leaderboard(self):
         if os.path.exists(self.leaderboard_file):
@@ -78,7 +79,7 @@ class Game:
         self.leaderboard = sorted(self.leaderboard, key=lambda x: x['score'], reverse=True)[:10]
         self.save_leaderboard()
 
-    def reset(self):
+    def reset(self, keep_score=False):
         self.map = GameMap()
         self.player = Player(self.map, skin=self.skin)
         # Spawn ghosts: Blinky, Pinky, Inky, Clyde
@@ -88,24 +89,21 @@ class Game:
         self.ghosts.append(Ghost(self.map, GHOST_TYPES[1][1], speed=self.ghost_speed, ghost_type='pinky'))
         self.ghosts.append(Ghost(self.map, GHOST_TYPES[2][1], speed=self.ghost_speed, ghost_type='inky', blinky_ref=blinky))
         self.ghosts.append(Ghost(self.map, GHOST_TYPES[3][1], speed=self.ghost_speed, ghost_type='clyde'))
-        self.score = 0
-        self.lives = 3
+        if not keep_score:
+            self.score = 0
+            self.lives = 3
         self.game_over = False
         self.ui = GameUI(self.screen)
         self.sounds.play_music('music.ogg')
-        self.saved_score = False
         self.particles = []
         self.shake = 0
         self.combo_timer = 0
         self.combo_count = 0
         self.combo_popups = []
-        self.start_timer = 120  # 2 seconds of READY!
-        # Power-up abundance by difficulty
-        if self.difficulty == 'Easy':
-            for _ in range(2):
-                self.player.teleport_uses += 1
-        elif self.difficulty == 'Hard':
-            self.player.teleport_uses = 0
+        self.start_timer = 120
+        self.fruit = None
+        self.fruit_timer = 0
+        self.dots_eaten = 0
 
     def handle_event(self, event):
         self.player.handle_event(event)
@@ -124,6 +122,22 @@ class Game:
         self.player.update()
         for ghost in self.ghosts:
             ghost.update(self.player)
+        # Fruit logic
+        if self.fruit is None and self.dots_eaten == 30:
+            # Spawn fruit at center
+            cx = len(self.map.grid[0])//2
+            cy = len(self.map.grid)//2
+            self.fruit = (cx, cy)
+            self.fruit_timer = 600  # 10s
+        if self.fruit:
+            self.fruit_timer -= 1
+            if self.fruit_timer <= 0:
+                self.fruit = None
+        # Eat fruit
+        if self.fruit and (self.player.x, self.player.y) == self.fruit:
+            self.score += 300
+            self.spawn_particles(self.player.fx, self.player.fy, (255,0,0))
+            self.fruit = None
         if self.map.eat_dot(self.player.x, self.player.y):
             self.score += 10
             self.sounds.play_sfx('dot.wav')
@@ -137,6 +151,7 @@ class Game:
             if self.combo_count > 1:
                 self.combo_popups.append(ComboPopup(self.player.fx*self.map.cell_size, self.player.fy*self.map.cell_size, self.combo_count*10))
                 self.score += (self.combo_count-1)*10
+            self.dots_eaten += 1
         # Power-up collection
         kind = self.map.eat_powerup(self.player.x, self.player.y)
         if kind:
@@ -144,11 +159,10 @@ class Game:
             self.sounds.play_sfx('powerup.wav')
             self.spawn_particles(self.player.fx, self.player.fy, (255,0,255))
         if self.map.dots_left() == 0:
-            self.game_over = True
-            self.sounds.stop_music()
-            if not self.saved_score:
-                self.add_score(self.score)
-                self.saved_score = True
+            self.level += 1
+            self.ghost_speed = max(4, int(self.ghost_speed * 0.85))
+            self.reset(keep_score=True)
+            return
         for ghost in self.ghosts:
             if ghost.x == self.player.x and ghost.y == self.player.y:
                 if ghost.eaten:
@@ -196,9 +210,16 @@ class Game:
             p.draw(self.screen, offset_x+sx, offset_y+sy)
         for c in self.combo_popups:
             c.draw(self.screen, offset_x+sx, offset_y+sy)
+        # Draw fruit
+        if self.fruit:
+            fx, fy = self.fruit
+            cell = self.map.cell_size
+            px = offset_x+sx + fx*cell
+            py = offset_y+sy + fy*cell
+            pygame.draw.circle(self.screen, (255,0,0), (px+cell//2, py+cell//2), cell//2-4)
         # UI bar (arcade style)
         high_score = max(self.score, max([e['score'] for e in self.leaderboard], default=0))
-        self.ui.draw(self.score, high_score, self.lives, map_rect)
+        self.ui.draw(self.score, high_score, self.lives, map_rect, level=self.level)
         # READY/GAME OVER in center
         if hasattr(self, 'start_timer') and self.start_timer > 0:
             self.ui.draw_ready(map_rect)
