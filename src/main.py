@@ -109,6 +109,8 @@ while True:
         if state == 'menu':
             menu.update()
             menu.draw()
+            if game:
+                game.draw(show_leaderboard=True)
             if menu.start_game:
                 start_fade('game')
         elif state == 'game':
@@ -142,6 +144,8 @@ while True:
         if state == 'menu':
             menu.update()
             menu.draw()
+            if game:
+                game.draw(show_leaderboard=True)
         elif state == 'game':
             if not paused and not game.game_over:
                 game.update()
